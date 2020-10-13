@@ -1,4 +1,4 @@
-# Proyecto Final 2020 - UTN FRA/FRBA: potenciostato
+# Proyecto Final 2020 - UTN FRA/FRBA: Potenciostato
 
 Mediante la técnica de voltamperometría, se miden sustratos (en principio líquidos) y se los categoriza en función de su respuesta voltamperométrica.
 
