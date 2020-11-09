@@ -22,6 +22,7 @@ private slots:
 
     void help();
 
+    void makePlot();
 private:
     Ui::MainWindow *ui;
 };
