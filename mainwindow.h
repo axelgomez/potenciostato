@@ -26,6 +26,7 @@ private slots:
 
     void makePlot();
     void onTimeout();
+    void realtimeData();
 private:
     Ui::MainWindow *ui;
 };
