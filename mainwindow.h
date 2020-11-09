@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QLabel>
+#include <QTimer>
+#include <QIcon>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,12 +20,12 @@ public:
 
 private slots:
     void on_pushButton_clicked();
-
     void on_Conectar_Bt_clicked();
 
     void help();
 
     void makePlot();
+    void onTimeout();
 private:
     Ui::MainWindow *ui;
 };

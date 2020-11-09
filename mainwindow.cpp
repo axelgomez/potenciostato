@@ -12,16 +12,22 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    MainWindow::makePlot();
 
     setWindowTitle("Potenciostato");
 
     //asocio la accion triggered del ui->actionAyuda a la funcion help() (dentro de slots el mainwindow.h)
     connect(ui->actionAyuda, SIGNAL(triggered()), this, SLOT(help()));
+    MainWindow::makePlot();
+
+    auto timer = new QTimer(this);
+    timer->setSingleShot(false);
+    connect(timer, &QTimer::timeout, this, &MainWindow::onTimeout);
+    timer->start(5000);
+    //el timer se usara para refrescar el grafico en base a la medicion obtenida por USB del potenciostato
 
 }
 
-MainWindow::~MainWindow()
+MainWindow::~MainWindow() //al cerrar la ventana se llama a este metodo
 {
     delete ui;
 
@@ -30,6 +36,10 @@ MainWindow::~MainWindow()
         libusb_free_device_list(devs,1);
         libusb_exit(ctx);
     }
+}
+
+void MainWindow::onTimeout(){
+    qDebug() << "timeout";
 }
 
 void MainWindow::makePlot()
