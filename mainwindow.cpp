@@ -7,6 +7,10 @@
 #include "globales.h"
 #include "libusb.h"
 
+#define CANT_VALORES 51
+
+QVector<double> valoresX(CANT_VALORES), valoresY(CANT_VALORES); // declara vectores con 10 posiciones (0..9)
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -17,7 +21,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //asocio la accion triggered del ui->actionAyuda a la funcion help() (dentro de slots el mainwindow.h)
     connect(ui->actionAyuda, SIGNAL(triggered()), this, SLOT(help()));
-    MainWindow::makePlot();
+    //MainWindow::makePlot();
+    MainWindow::graficarValores();
 
     // Configuracion timer
     auto timer = new QTimer(this);
@@ -26,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     //timer->start(5000);
     //el timer se usara para refrescar el grafico en base a la medicion obtenida por USB del potenciostato
 
-
+    /*
     //Configuracion real time plot
     ui->customPlot->addGraph(); // blue line
     ui->customPlot->graph(0)->setPen(QPen(QColor(40, 110, 255)));
@@ -46,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     // setup a timer that repeatedly calls MainWindow::realtimeData:
     connect(timer, &QTimer::timeout, this, &MainWindow::realtimeData);
     timer->start(0); // Interval 0 means to refresh as fast as possible
+    */
 }
 
 MainWindow::~MainWindow() //al cerrar la ventana se llama a este metodo
@@ -57,6 +63,87 @@ MainWindow::~MainWindow() //al cerrar la ventana se llama a este metodo
         libusb_free_device_list(devs,1);
         libusb_exit(ctx);
     }
+}
+
+void MainWindow::graficarValores(){
+    double muestraX[CANT_VALORES] = {
+        0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59,
+        0.60, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66, 0.67, 0.68, 0.69,
+        0.70, 0.71, 0.72, 0.73, 0.74, 0.75, 0.76, 0.77, 0.78, 0.79,
+        0.80, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.89,
+        0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99,
+        1.00
+    };
+    double muestraY[CANT_VALORES] = {
+        0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+        0.011, 0.020, 0.011, 0.015, 0.011, 0.018, 0.023, 0.011, 0.036, 0.050,
+        0.111, 0.332, 0.552, 0.773, 0.994, 1.210, 1.430, 1.660, 1.880, 2.100,
+        2.320, 2.540, 2.760, 2.980, 3.200, 3.420, 3.500, 3.550, 3.580, 3.570,
+        3.520, 3.460, 3.410, 3.370, 3.320, 3.250, 3.190, 3.140, 3.090, 3.040,
+        3.000
+    };
+    int i;
+    double multiplicadorX, multiplicadorY;
+
+    // aplicamos escalamiento por multiplicadores de unidades
+
+    multiplicadorX = 1.00;
+    for (i=0; i<CANT_VALORES; ++i)
+    {
+        muestraX[i] = muestraX[i]*multiplicadorX;
+    }
+
+    multiplicadorY = 10.00;
+    for (i=0; i<CANT_VALORES; ++i)
+    {
+        muestraY[i] = muestraY[i]*multiplicadorY;
+    }
+
+    // generate some data:
+    for (i=0; i<CANT_VALORES; ++i)
+    {
+        valoresX[i] = muestraX[i];
+        valoresY[i] = muestraY[i];
+    }
+    // create graph
+    ui->customPlot->addGraph();
+    // give the axes some labels:
+    ui->customPlot->xAxis->setLabel("Tension [V]");
+    ui->customPlot->yAxis->setLabel("Corriente [uA]");
+    // se puede especificar el rango fijo
+    // set axes ranges, so we see all data:
+    ui->customPlot->xAxis->setRange(0.5, 1.0);
+    ui->customPlot->yAxis->setRange(0, 40);
+
+    // hace que los ejes escalen automaticamente
+    ui->customPlot->graph(0)->rescaleAxes();
+    connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
+    connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
+
+    // poner datos en el grafico
+    ui->customPlot->graph(0)->setPen(QPen(Qt::red));
+    ui->customPlot->graph(0)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    ui->customPlot->replot();
+
+    // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
+    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+}
+
+void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES]){
+    // opcionalmente, para hallar el largo del vector x
+    //size_t n = (&x)[1] - x;
+    //int largo = (int) n;
+
+    for (int i=0; i < CANT_VALORES; ++i)
+    {
+        valoresX[i] = x[i];
+        valoresY[i] = y[i];
+    }
+    // poner datos en el grafico
+    //ui->customPlot->addGraph();
+    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    ui->customPlot->replot();
 }
 
 void MainWindow::realtimeData(){
@@ -98,7 +185,22 @@ void MainWindow::realtimeData(){
 }
 
 void MainWindow::onTimeout(){
-    qDebug() << "timeout";
+    double muestraX[CANT_VALORES] = {0};
+    double muestraY[CANT_VALORES] = {0};
+
+
+    for (int i=0; i < CANT_VALORES; ++i)
+    {
+        muestraX[i] = valoresX[i];
+        if (i%2 > 0)
+            muestraY[i] = valoresY[i]+0.3;
+        else
+            muestraY[i] = valoresY[i]+0.25;
+    }
+
+    qDebug() << "Envio de refresco al grafico";
+    MainWindow::refrescarValores(muestraX, muestraY);
+
 }
 
 void MainWindow::makePlot()
