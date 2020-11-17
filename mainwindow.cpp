@@ -11,6 +11,24 @@
 
 QVector<double> valoresX(CANT_VALORES), valoresY(CANT_VALORES); // declara vectores con 10 posiciones (0..9)
 
+double primer_curva_paracetamolX[CANT_VALORES] = {
+    0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59,
+    0.60, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66, 0.67, 0.68, 0.69,
+    0.70, 0.71, 0.72, 0.73, 0.74, 0.75, 0.76, 0.77, 0.78, 0.79,
+    0.80, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.89,
+    0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99,
+    1.00
+};
+double primer_curva_paracetamolY[CANT_VALORES] = {
+    0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
+    0.011, 0.020, 0.011, 0.015, 0.011, 0.018, 0.023, 0.011, 0.036, 0.050,
+    0.111, 0.332, 0.552, 0.773, 0.994, 1.210, 1.430, 1.660, 1.880, 2.100,
+    2.320, 2.540, 2.760, 2.980, 3.200, 3.420, 3.500, 3.550, 3.580, 3.570,
+    3.520, 3.460, 3.410, 3.370, 3.320, 3.250, 3.190, 3.140, 3.090, 3.040,
+    3.000
+};
+int p_refresco = 0;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -28,9 +46,10 @@ MainWindow::MainWindow(QWidget *parent)
     auto timer = new QTimer(this);
     timer->setSingleShot(false);
     connect(timer, &QTimer::timeout, this, &MainWindow::onTimeout);
-    //timer->start(5000);
+    timer->start(100);
     //el timer se usara para refrescar el grafico en base a la medicion obtenida por USB del potenciostato
 
+    /* DEPRECADO */
     /*
     //Configuracion real time plot
     ui->customPlot->addGraph(); // blue line
@@ -66,45 +85,102 @@ MainWindow::~MainWindow() //al cerrar la ventana se llama a este metodo
 }
 
 void MainWindow::graficarValores(){
-    double muestraX[CANT_VALORES] = {
-        0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59,
-        0.60, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66, 0.67, 0.68, 0.69,
-        0.70, 0.71, 0.72, 0.73, 0.74, 0.75, 0.76, 0.77, 0.78, 0.79,
-        0.80, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.89,
-        0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99,
-        1.00
-    };
-    double muestraY[CANT_VALORES] = {
-        0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010, 0.010,
-        0.011, 0.020, 0.011, 0.015, 0.011, 0.018, 0.023, 0.011, 0.036, 0.050,
-        0.111, 0.332, 0.552, 0.773, 0.994, 1.210, 1.430, 1.660, 1.880, 2.100,
-        2.320, 2.540, 2.760, 2.980, 3.200, 3.420, 3.500, 3.550, 3.580, 3.570,
-        3.520, 3.460, 3.410, 3.370, 3.320, 3.250, 3.190, 3.140, 3.090, 3.040,
-        3.000
-    };
     int i;
     double multiplicadorX, multiplicadorY;
+    double tempX[CANT_VALORES] = {0};
+    double tempY[CANT_VALORES] = {0};
 
     // aplicamos escalamiento por multiplicadores de unidades
 
     multiplicadorX = 1.00;
     for (i=0; i<CANT_VALORES; ++i)
     {
-        muestraX[i] = muestraX[i]*multiplicadorX;
+        tempX[i] = primer_curva_paracetamolX[i]*multiplicadorX;
     }
 
     multiplicadorY = 10.00;
     for (i=0; i<CANT_VALORES; ++i)
     {
-        muestraY[i] = muestraY[i]*multiplicadorY;
+        tempY[i] = primer_curva_paracetamolY[i]*multiplicadorY;
     }
 
     // generate some data:
     for (i=0; i<CANT_VALORES; ++i)
     {
-        valoresX[i] = muestraX[i];
-        valoresY[i] = muestraY[i];
+        valoresX[i] = tempX[i];
+        valoresY[i] = tempY[i];
     }
+
+    // inicializar graficos
+    MainWindow::inicializarGraficos();
+    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    ui->customPlot->replot();
+
+    // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
+    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+}
+
+void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES]){
+    // opcionalmente, para hallar el largo del vector x
+    //size_t n = (&x)[1] - x;
+    //int largo = (int) n;
+    int i;
+    double multiplicadorX, multiplicadorY;
+    double tempX[CANT_VALORES] = {0};
+    double tempY[CANT_VALORES] = {0};
+
+    // Se aplica la escala correspondiente
+    multiplicadorX = 1.00;
+    for (i=0; i < CANT_VALORES; ++i)
+    {
+        tempX[i] = x[i]*multiplicadorX;
+    }
+
+    multiplicadorY = 10.00;
+    for (i=0; i < CANT_VALORES; ++i)
+    {
+        tempY[i] = y[i]*multiplicadorY;
+    }
+
+    for (i=0; i < CANT_VALORES; ++i)
+    {
+        valoresX[i] = tempX[i];
+        valoresY[i] = tempY[i];
+    }
+    // poner datos en el grafico
+    //ui->customPlot->addGraph();
+    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    ui->customPlot->replot();
+
+    // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
+    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+}
+
+void MainWindow::onTimeout(){
+    double tempX[CANT_VALORES] = {0};
+    double tempY[CANT_VALORES] = {0};
+
+    for (int i=0; i < p_refresco; ++i)
+    {
+        tempX[i] = primer_curva_paracetamolX[i];
+        tempY[i] = primer_curva_paracetamolY[i];
+    }
+
+    if (p_refresco >= CANT_VALORES){
+        p_refresco = 0;
+        qDebug() << "Limpieza de graficos";
+        MainWindow::limpiarGraficos();
+        qDebug() << "Inicializacion del grafico 0";
+        MainWindow::inicializarGraficos();
+
+    }else{
+        p_refresco ++;
+        qDebug() << "Envio de refresco al grafico";
+        MainWindow::refrescarValores(tempX, tempY);
+    }
+}
+
+void MainWindow::inicializarGraficos(){
     // create graph
     ui->customPlot->addGraph();
     // give the axes some labels:
@@ -120,108 +196,13 @@ void MainWindow::graficarValores(){
     connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
     connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-    // poner datos en el grafico
+    // modificar apariencia del grafico
     ui->customPlot->graph(0)->setPen(QPen(Qt::red));
     ui->customPlot->graph(0)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-    ui->customPlot->graph(0)->setData(valoresX, valoresY);
-    ui->customPlot->replot();
-
-    // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
-    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 }
 
-void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES]){
-    // opcionalmente, para hallar el largo del vector x
-    //size_t n = (&x)[1] - x;
-    //int largo = (int) n;
-
-    for (int i=0; i < CANT_VALORES; ++i)
-    {
-        valoresX[i] = x[i];
-        valoresY[i] = y[i];
-    }
-    // poner datos en el grafico
-    //ui->customPlot->addGraph();
-    ui->customPlot->graph(0)->setData(valoresX, valoresY);
-    ui->customPlot->replot();
-}
-
-void MainWindow::realtimeData(){
-    static QTime time(QTime::currentTime());
-    // calculate two new data points:
-    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
-    static double lastPointKey = 0;
-    if (key-lastPointKey > 0.002) // at most add point every 2 ms
-    {
-        // add data to lines:
-        ui->customPlot->graph(0)->addData(key, qSin(key)+qrand()/(double)RAND_MAX*1*qSin(key/0.3843));
-        ui->customPlot->graph(1)->addData(key, qCos(key)+qrand()/(double)RAND_MAX*0.5*qSin(key/0.4364));
-        // rescale value (vertical) axis to fit the current data:
-        //ui->customPlot->graph(0)->rescaleValueAxis();
-        //ui->customPlot->graph(1)->rescaleValueAxis(true);
-        lastPointKey = key;
-    }
-    // make key axis range scroll with the data (at a constant range size of 8):
-    ui->customPlot->xAxis->setRange(key, 8, Qt::AlignRight);
-    ui->customPlot->replot();
-
-    // calculate frames per second:
-    static double lastFpsKey;
-    static int frameCount;
-    ++frameCount;
-    if (key-lastFpsKey > 2) // average fps over 2 seconds
-    {
-        /*ui->statusBar->showMessage(
-            QString("%1 FPS, Total Data points: %2")
-                .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
-                .arg(ui->customPlot->graph(0)->data()->size()+ui->customPlot->graph(1)->data()->size())
-                , 0);*/
-        qDebug() << QString("%1 FPS, Total Data points: %2")
-                        .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
-                        .arg(ui->customPlot->graph(0)->data()->size()+ui->customPlot->graph(1)->data()->size());
-        lastFpsKey = key;
-        frameCount = 0;
-    }
-}
-
-void MainWindow::onTimeout(){
-    double muestraX[CANT_VALORES] = {0};
-    double muestraY[CANT_VALORES] = {0};
-
-
-    for (int i=0; i < CANT_VALORES; ++i)
-    {
-        muestraX[i] = valoresX[i];
-        if (i%2 > 0)
-            muestraY[i] = valoresY[i]+0.3;
-        else
-            muestraY[i] = valoresY[i]+0.25;
-    }
-
-    qDebug() << "Envio de refresco al grafico";
-    MainWindow::refrescarValores(muestraX, muestraY);
-
-}
-
-void MainWindow::makePlot()
-{
-    // generate some data:
-    QVector<double> x(101), y(101); // initialize with entries 0..100
-    for (int i=0; i<101; ++i)
-    {
-        x[i] = i/50.0 - 1; // x goes from -1 to 1
-        y[i] = x[i]*x[i]; // let's plot a quadratic function
-    }
-    // create graph and assign data to it:
-    ui->customPlot->addGraph();
-    ui->customPlot->graph(0)->setData(x, y);
-    // give the axes some labels:
-    ui->customPlot->xAxis->setLabel("x");
-    ui->customPlot->yAxis->setLabel("y");
-    // set axes ranges, so we see all data:
-    ui->customPlot->xAxis->setRange(-1, 1);
-    ui->customPlot->yAxis->setRange(0, 1);
-    ui->customPlot->replot();
+void MainWindow::limpiarGraficos(){
+    ui->customPlot->clearGraphs();
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -404,4 +385,65 @@ void MainWindow::help()
     qDebug() << "Ayuda";
     //link a documentacion https://doc.qt.io/qt-5/qmessagebox.html#about
     QMessageBox::about(this,"Sobre Potenciostato","Potenciostato versión 1.0");
+}
+
+/* -------------------- FUNCIONES DEPRECADAS -------------------- */
+
+
+void MainWindow::makePlot()
+{
+    // generate some data:
+    QVector<double> x(101), y(101); // initialize with entries 0..100
+    for (int i=0; i<101; ++i)
+    {
+        x[i] = i/50.0 - 1; // x goes from -1 to 1
+        y[i] = x[i]*x[i]; // let's plot a quadratic function
+    }
+    // create graph and assign data to it:
+    ui->customPlot->addGraph();
+    ui->customPlot->graph(0)->setData(x, y);
+    // give the axes some labels:
+    ui->customPlot->xAxis->setLabel("x");
+    ui->customPlot->yAxis->setLabel("y");
+    // set axes ranges, so we see all data:
+    ui->customPlot->xAxis->setRange(-1, 1);
+    ui->customPlot->yAxis->setRange(0, 1);
+    ui->customPlot->replot();
+}
+void MainWindow::realtimeData(){
+    static QTime time(QTime::currentTime());
+    // calculate two new data points:
+    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
+    static double lastPointKey = 0;
+    if (key-lastPointKey > 0.002) // at most add point every 2 ms
+    {
+        // add data to lines:
+        ui->customPlot->graph(0)->addData(key, qSin(key)+qrand()/(double)RAND_MAX*1*qSin(key/0.3843));
+        ui->customPlot->graph(1)->addData(key, qCos(key)+qrand()/(double)RAND_MAX*0.5*qSin(key/0.4364));
+        // rescale value (vertical) axis to fit the current data:
+        //ui->customPlot->graph(0)->rescaleValueAxis();
+        //ui->customPlot->graph(1)->rescaleValueAxis(true);
+        lastPointKey = key;
+    }
+    // make key axis range scroll with the data (at a constant range size of 8):
+    ui->customPlot->xAxis->setRange(key, 8, Qt::AlignRight);
+    ui->customPlot->replot();
+
+    // calculate frames per second:
+    static double lastFpsKey;
+    static int frameCount;
+    ++frameCount;
+    if (key-lastFpsKey > 2) // average fps over 2 seconds
+    {
+        /*ui->statusBar->showMessage(
+            QString("%1 FPS, Total Data points: %2")
+                .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
+                .arg(ui->customPlot->graph(0)->data()->size()+ui->customPlot->graph(1)->data()->size())
+                , 0);*/
+        qDebug() << QString("%1 FPS, Total Data points: %2")
+                        .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
+                        .arg(ui->customPlot->graph(0)->data()->size()+ui->customPlot->graph(1)->data()->size());
+        lastFpsKey = key;
+        frameCount = 0;
+    }
 }

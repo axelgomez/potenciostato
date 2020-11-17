@@ -29,6 +29,8 @@ private slots:
     void realtimeData();
     void graficarValores();
     void refrescarValores(double x[10], double y[10]);
+    void limpiarGraficos();
+    void inicializarGraficos();
 private:
     Ui::MainWindow *ui;
 };
