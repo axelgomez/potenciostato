@@ -21,6 +21,10 @@ public:
 private slots:
     void on_pushButton_clicked();
     void on_Conectar_Bt_clicked();
+    void on_Bt_Iniciar_clicked();
+    void on_Bt_Abortar_clicked();
+    void on_Bt_Capturar_clicked();
+    void on_Bt_Exportar_clicked();
 
     void help();
 
@@ -31,6 +35,8 @@ private slots:
     void refrescarValores(double x[10], double y[10]);
     void limpiarGraficos();
     void inicializarGraficos();
+    void terminoMedicion();
+
 private:
     Ui::MainWindow *ui;
 };

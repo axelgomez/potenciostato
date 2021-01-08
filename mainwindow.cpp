@@ -28,19 +28,24 @@ double primer_curva_paracetamolY[CANT_VALORES] = {
     3.000
 };
 int p_refresco = 0;
+char metodo[30] = "BarridoLineal";
+int medicion_habilitada = 0;
+bool demostracion = true;
+bool grafico_inicial = false;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
     setWindowTitle("Potenciostato");
 
     //asocio la accion triggered del ui->actionAyuda a la funcion help() (dentro de slots el mainwindow.h)
     connect(ui->actionAyuda, SIGNAL(triggered()), this, SLOT(help()));
-    //MainWindow::makePlot();
-    MainWindow::graficarValores();
+    MainWindow::inicializarGraficos();
+    if (grafico_inicial == true){
+        MainWindow::graficarValores();
+    }
 
     // Configuracion timer
     auto timer = new QTimer(this);
@@ -104,7 +109,7 @@ void MainWindow::graficarValores(){
         tempY[i] = primer_curva_paracetamolY[i]*multiplicadorY;
     }
 
-    // generate some data:
+    // se almacena en valoresX y valoresY que son los QVectors que se grafican
     for (i=0; i<CANT_VALORES; ++i)
     {
         valoresX[i] = tempX[i];
@@ -160,34 +165,70 @@ void MainWindow::onTimeout(){
     double tempX[CANT_VALORES] = {0};
     double tempY[CANT_VALORES] = {0};
 
-    for (int i=0; i < p_refresco; ++i)
-    {
-        tempX[i] = primer_curva_paracetamolX[i];
-        tempY[i] = primer_curva_paracetamolY[i];
-    }
-
-    if (p_refresco >= CANT_VALORES){
-        p_refresco = 0;
-        qDebug() << "Limpieza de graficos";
-        MainWindow::limpiarGraficos();
-        qDebug() << "Inicializacion del grafico 0";
-        MainWindow::inicializarGraficos();
-
+    if (demostracion == true){
+        for (int i=0; i < p_refresco; ++i)
+        {
+            tempX[i] = primer_curva_paracetamolX[i];
+            tempY[i] = primer_curva_paracetamolY[i];
+        }
     }else{
-        p_refresco ++;
-        qDebug() << "Envio de refresco al grafico";
-        MainWindow::refrescarValores(tempX, tempY);
+        //obtener el dato del buffer de entrada
     }
+
+    // ESTE IF TODAVIA NO ESTA PROBADO
+    if (demostracion == false){
+        if (strcmp(metodo,"BarridoLineal") == 0 && medicion_habilitada == 1){
+            //este if debera ser la condicion para el termino de la medicion
+            //es decir, se recibe el dato, si no es el fin de la medicion se appendea el dato
+            //si es el fin de la medicion se envia el Recibido y se termina la medicion
+            if (true){
+                qDebug() << "Termino la medicion";
+                medicion_habilitada = 0;
+                MainWindow::terminoMedicion();
+            }else{
+                p_refresco ++;
+                qDebug() << "Envio de refresco al grafico";
+                MainWindow::refrescarValores(tempX, tempY);
+            }
+        }
+    }
+
+    if (demostracion == true){
+        if (strcmp(metodo,"BarridoLineal") == 0 && medicion_habilitada == 1){
+            if (p_refresco >= CANT_VALORES){
+                qDebug() << "Termino la medicion";
+                medicion_habilitada = 0;
+                MainWindow::terminoMedicion();
+            }else{
+                p_refresco ++;
+                qDebug() << "Envio de refresco al grafico";
+                MainWindow::refrescarValores(tempX, tempY);
+            }
+        }
+
+        if (strcmp(metodo,"Reiterativo") == 0  && medicion_habilitada == 1){
+            if (p_refresco >= CANT_VALORES){
+                p_refresco = 0;
+                qDebug() << "Limpieza de graficos";
+                MainWindow::limpiarGraficos();
+                qDebug() << "Inicializacion del grafico 0";
+                MainWindow::inicializarGraficos();
+            }else{
+                p_refresco ++;
+                qDebug() << "Envio de refresco al grafico";
+                MainWindow::refrescarValores(tempX, tempY);
+            }
+        }
+    }
+
 }
 
 void MainWindow::inicializarGraficos(){
-    // create graph
+    // se crea el graph
     ui->customPlot->addGraph();
-    // give the axes some labels:
     ui->customPlot->xAxis->setLabel("Tension [V]");
     ui->customPlot->yAxis->setLabel("Corriente [uA]");
     // se puede especificar el rango fijo
-    // set axes ranges, so we see all data:
     ui->customPlot->xAxis->setRange(0.5, 1.0);
     ui->customPlot->yAxis->setRange(0, 40);
 
@@ -205,10 +246,87 @@ void MainWindow::limpiarGraficos(){
     ui->customPlot->clearGraphs();
 }
 
+// Es llamada cuando el LPC y el QT estan al tanto del termino de la medición
+void MainWindow::terminoMedicion(){
+    ui->Bt_Iniciar->setEnabled(true);
+    ui->Bt_Abortar->setEnabled(false);
+    ui->Bt_Capturar->setEnabled(false);
+    ui->Bt_Exportar->setEnabled(true);
+}
+
 void MainWindow::on_pushButton_clicked()
 {
     qDebug() << "hola";
 }
+
+void MainWindow::on_Bt_Iniciar_clicked()
+{
+    qDebug() << "Iniciar Medición";
+    //Deshabilita Iniciar
+    ui->Bt_Iniciar->setEnabled(false);
+    ui->Bt_Exportar->setEnabled(false);
+
+    //Se envia inicio de medición al LPC
+    //envio....
+    //se queda esperando al Recibido
+    // si llega recibido OK continuar
+
+    //Limpia el gráfico y lo inicializa
+    MainWindow::limpiarGraficos();
+    MainWindow::inicializarGraficos();
+
+    //Se activa la medicion en el Timer
+    medicion_habilitada = 1;
+    if (demostracion == true){
+        p_refresco = 0;
+    }
+
+    //Habilita abortar y capturar
+    ui->Bt_Abortar->setEnabled(true);
+    ui->Bt_Capturar->setEnabled(true);
+
+    //Escucha los datos que llegan (valores).
+}
+
+void MainWindow::on_Bt_Abortar_clicked()
+{
+    qDebug() << "Abortar Medición";
+    //Deshabilita Abortar
+    ui->Bt_Abortar->setEnabled(false);
+
+    //Se envia abortar la medición al LPC
+    //envio....
+    //se queda esperando al Recibido
+    // si llega recibido OK continuar
+
+    //Se termina la medición
+    MainWindow::terminoMedicion();
+    if (demostracion == true){
+        p_refresco = 0;
+        medicion_habilitada = 0;
+    }
+
+}
+
+void MainWindow::on_Bt_Capturar_clicked()
+{
+    qDebug() << "Capturar Medición";
+
+    //Almacena en la carpeta mediciones una foto de la medición actual
+    // con un timestamp y los datos en csv correspondientes.
+
+}
+
+void MainWindow::on_Bt_Exportar_clicked()
+{
+    qDebug() << "Exportar Medición";
+
+    //Almacena en la carpeta mediciones una foto de la medición final
+    // con un timestamp y los datos en csv correspondientes.
+    //Recibe la elección del nombre de los 2 archivos a guardar (imagen y datos en csv)
+
+}
+
 
 void MainWindow::on_Conectar_Bt_clicked()
 {
@@ -387,6 +505,10 @@ void MainWindow::help()
     QMessageBox::about(this,"Sobre Potenciostato","Potenciostato versión 1.0");
 }
 
+
+
+
+
 /* -------------------- FUNCIONES DEPRECADAS -------------------- */
 
 
@@ -447,3 +569,7 @@ void MainWindow::realtimeData(){
         frameCount = 0;
     }
 }
+
+
+
+

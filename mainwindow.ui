@@ -55,9 +55,9 @@
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="grafico">
+    <widget class="QWidget" name="medicion">
      <attribute name="title">
-      <string>Gráfico</string>
+      <string>Medición</string>
      </attribute>
      <widget class="QCustomPlot" name="customPlot" native="true">
       <property name="geometry">
@@ -67,6 +67,73 @@
         <width>621</width>
         <height>381</height>
        </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="Bt_Iniciar">
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>50</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Iniciar Medición</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="Bt_Abortar">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>100</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>Abortar</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="Bt_Capturar">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>150</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Capturar</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="Bt_Exportar">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>200</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>Exportar</string>
       </property>
      </widget>
     </widget>
@@ -94,9 +161,9 @@
     <addaction name="actionAbrir_Medicion"/>
     <addaction name="actionOpciones"/>
    </widget>
-   <widget class="QMenu" name="menuVoltamperometr_a_C_clica">
+   <widget class="QMenu" name="menuBarrido_Lineal">
     <property name="title">
-     <string>Voltamperometría Cíclica</string>
+     <string>Barrido Lineal</string>
     </property>
     <addaction name="actionMedir"/>
     <addaction name="actionConfiguracion"/>
@@ -108,7 +175,7 @@
     <addaction name="actionAyuda"/>
    </widget>
    <addaction name="menuArchivo"/>
-   <addaction name="menuVoltamperometr_a_C_clica"/>
+   <addaction name="menuBarrido_Lineal"/>
    <addaction name="menuAyuda"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
