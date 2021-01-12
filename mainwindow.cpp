@@ -30,8 +30,9 @@ double primer_curva_paracetamolY[CANT_VALORES] = {
 int p_refresco = 0;
 char metodo[30] = "BarridoLineal";
 int medicion_habilitada = 0;
-bool demostracion = true;
+bool demostracion = false;
 bool grafico_inicial = false;
+int grafico_demostracion;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -43,6 +44,9 @@ MainWindow::MainWindow(QWidget *parent)
     //asocio la accion triggered del ui->actionAyuda a la funcion help() (dentro de slots el mainwindow.h)
     connect(ui->actionAyuda, SIGNAL(triggered()), this, SLOT(help()));
     MainWindow::inicializarGraficos();
+    if (demostracion == true){
+        grafico_demostracion = 0;
+    }
     if (grafico_inicial == true){
         MainWindow::graficarValores();
     }
@@ -89,21 +93,21 @@ MainWindow::~MainWindow() //al cerrar la ventana se llama a este metodo
     }
 }
 
-void MainWindow::graficarValores(){
+// Funcion para inicializar y graficar una sola vez una curva, no apta para ser llamada dentro de un Timer
+void MainWindow::graficarValores(int curva, double multiplicadorX, double  multiplicadorY){
     int i;
-    double multiplicadorX, multiplicadorY;
     double tempX[CANT_VALORES] = {0};
     double tempY[CANT_VALORES] = {0};
 
     // aplicamos escalamiento por multiplicadores de unidades
 
-    multiplicadorX = 1.00;
+    // multiplicadorX = 1.00;
     for (i=0; i<CANT_VALORES; ++i)
     {
         tempX[i] = primer_curva_paracetamolX[i]*multiplicadorX;
     }
 
-    multiplicadorY = 10.00;
+    // multiplicadorY = 10.00;
     for (i=0; i<CANT_VALORES; ++i)
     {
         tempY[i] = primer_curva_paracetamolY[i]*multiplicadorY;
@@ -117,31 +121,31 @@ void MainWindow::graficarValores(){
     }
 
     // inicializar graficos
-    MainWindow::inicializarGraficos();
-    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    MainWindow::inicializarGraficos(curva);
+    ui->customPlot->graph(curva)->setData(valoresX, valoresY);
     ui->customPlot->replot();
 
     // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
     ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 }
 
-void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES]){
+// Funcion que se debera llamar desde un Timer para refrescar los valores en el grafico
+void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES], int curva, double multiplicadorX, double multiplicadorY){
     // opcionalmente, para hallar el largo del vector x
     //size_t n = (&x)[1] - x;
     //int largo = (int) n;
     int i;
-    double multiplicadorX, multiplicadorY;
     double tempX[CANT_VALORES] = {0};
     double tempY[CANT_VALORES] = {0};
 
     // Se aplica la escala correspondiente
-    multiplicadorX = 1.00;
+    // multiplicadorX = 1.00;
     for (i=0; i < CANT_VALORES; ++i)
     {
         tempX[i] = x[i]*multiplicadorX;
     }
 
-    multiplicadorY = 10.00;
+    // multiplicadorY = 10.00;
     for (i=0; i < CANT_VALORES; ++i)
     {
         tempY[i] = y[i]*multiplicadorY;
@@ -154,7 +158,7 @@ void MainWindow::refrescarValores(double x[CANT_VALORES], double y[CANT_VALORES]
     }
     // poner datos en el grafico
     //ui->customPlot->addGraph();
-    ui->customPlot->graph(0)->setData(valoresX, valoresY);
+    ui->customPlot->graph(curva)->setData(valoresX, valoresY);
     ui->customPlot->replot();
 
     // hace interactivo al grafico para que se pueda arrastrar, hacer zoom y seleccionar las curvas
@@ -195,14 +199,36 @@ void MainWindow::onTimeout(){
 
     if (demostracion == true){
         if (strcmp(metodo,"BarridoLineal") == 0 && medicion_habilitada == 1){
-            if (p_refresco >= CANT_VALORES){
+            if (p_refresco >= CANT_VALORES && grafico_demostracion == 0){
+                p_refresco = 0;
+                qDebug() << "Termino el primer grafico de demostracion";
+                grafico_demostracion = 1;
+                MainWindow::inicializarGraficos(grafico_demostracion);
+            }
+            else if (p_refresco >= CANT_VALORES && grafico_demostracion == 1){
+                p_refresco = 0;
+                qDebug() << "Termino el segundo grafico de demostracion";
+                grafico_demostracion = 2;
+                MainWindow::inicializarGraficos(grafico_demostracion);
+            }
+            else if (p_refresco >= CANT_VALORES && grafico_demostracion == 2){
+                p_refresco = 0;
+                qDebug() << "Termino el tercer grafico de demostracion";
+                grafico_demostracion = 3;
+                MainWindow::inicializarGraficos(grafico_demostracion);
+            }
+            else if (p_refresco >= CANT_VALORES && grafico_demostracion == 3){
+                p_refresco = 0;
                 qDebug() << "Termino la medicion";
                 medicion_habilitada = 0;
                 MainWindow::terminoMedicion();
             }else{
                 p_refresco ++;
                 qDebug() << "Envio de refresco al grafico";
-                MainWindow::refrescarValores(tempX, tempY);
+                MainWindow::refrescarValores(tempX, tempY,
+                                             grafico_demostracion,
+                                             1,
+                                             10*(1-grafico_demostracion*0.15));
             }
         }
 
@@ -223,7 +249,8 @@ void MainWindow::onTimeout(){
 
 }
 
-void MainWindow::inicializarGraficos(){
+// Funcion para inicializar las curvas de los graficos
+void MainWindow::inicializarGraficos(int curva){
     // se crea el graph
     ui->customPlot->addGraph();
     ui->customPlot->xAxis->setLabel("Tension [V]");
@@ -233,13 +260,28 @@ void MainWindow::inicializarGraficos(){
     ui->customPlot->yAxis->setRange(0, 40);
 
     // hace que los ejes escalen automaticamente
-    ui->customPlot->graph(0)->rescaleAxes();
+    ui->customPlot->graph(curva)->rescaleAxes();
     connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
     connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
     // modificar apariencia del grafico
-    ui->customPlot->graph(0)->setPen(QPen(Qt::red));
-    ui->customPlot->graph(0)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+    if (curva == 0){
+        ui->customPlot->graph(curva)->setPen(QPen(Qt::red));
+        ui->customPlot->graph(curva)->setBrush(QBrush(QColor(255, 0, 0, 20)));
+    }
+    if (curva == 1){
+        ui->customPlot->graph(curva)->setPen(QPen(Qt::green));
+        ui->customPlot->graph(curva)->setBrush(QBrush(QColor(0, 255, 0, 20)));
+    }
+    if (curva == 2){
+        ui->customPlot->graph(curva)->setPen(QPen(Qt::blue));
+        ui->customPlot->graph(curva)->setBrush(QBrush(QColor(0, 0, 255, 20)));
+    }
+    if (curva == 3){
+        ui->customPlot->graph(curva)->setPen(QPen(Qt::black));
+        ui->customPlot->graph(curva)->setBrush(QBrush(QColor(0, 0, 0, 20)));
+    }
+
 }
 
 void MainWindow::limpiarGraficos(){

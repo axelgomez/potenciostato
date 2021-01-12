@@ -31,11 +31,12 @@ private slots:
     void makePlot();
     void onTimeout();
     void realtimeData();
-    void graficarValores();
-    void refrescarValores(double x[10], double y[10]);
+    void graficarValores(int curva = 0, double multiplicadorX = 1, double multiplicadorY = 10);
+    void refrescarValores(double x[10], double y[10], int curva = 0, double multiplicadorX = 1, double multiplicadorY = 10);
     void limpiarGraficos();
-    void inicializarGraficos();
+    void inicializarGraficos(int curva = 0);
     void terminoMedicion();
+
 
 private:
     Ui::MainWindow *ui;
